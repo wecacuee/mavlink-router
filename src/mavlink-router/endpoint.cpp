@@ -489,8 +489,6 @@ int UartEndpoint::set_flow_control(bool enabled)
 int UartEndpoint::open(const char *path)
 {
     struct termios2 tc;
-    const int bit_dtr = TIOCM_DTR;
-    const int bit_rts = TIOCM_RTS;
 
     fd = ::open(path, O_RDWR|O_NONBLOCK|O_CLOEXEC|O_NOCTTY);
     if (fd < 0) {
@@ -534,13 +532,6 @@ int UartEndpoint::open(const char *path)
 
     if (ioctl(fd, TCSETS2, &tc) == -1) {
         log_error("Could not set terminal attributes (%m)");
-        goto fail;
-    }
-
-    /* set DTR/RTS */
-    if (ioctl(fd, TIOCMBIS, &bit_dtr) == -1 ||
-        ioctl(fd, TIOCMBIS, &bit_rts) == -1) {
-        log_error("Could not set DTR/RTS (%m)");
         goto fail;
     }
 
