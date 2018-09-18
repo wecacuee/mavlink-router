@@ -137,7 +137,7 @@ void Mainloop::route_msg(struct buffer *buf, int target_sysid, int target_compid
     bool unknown = true;
 
     for (Endpoint **e = g_endpoints; *e != nullptr; e++) {
-        if ((*e)->accept_msg(target_sysid, target_compid, sender_sysid, sender_compid)) {
+        if ((*e)->accept_msg(buf)) {
             log_debug("Endpoint [%d] accepted message to %d/%d from %u/%u", (*e)->fd, target_sysid,
                       target_compid, sender_sysid, sender_compid);
             write_msg(*e, buf);
@@ -146,7 +146,7 @@ void Mainloop::route_msg(struct buffer *buf, int target_sysid, int target_compid
     }
 
     for (struct endpoint_entry *e = g_tcp_endpoints; e; e = e->next) {
-        if (e->endpoint->accept_msg(target_sysid, target_compid, sender_sysid, sender_compid)) {
+        if (e->endpoint->accept_msg(buf)) {
             log_debug("Endpoint [%d] accepted message to %d/%d from %u/%u", e->endpoint->fd,
                       target_sysid, target_compid, sender_sysid, sender_compid);
             int r = write_msg(e->endpoint, buf);

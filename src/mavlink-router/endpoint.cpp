@@ -308,12 +308,12 @@ bool Endpoint::has_sys_comp_id(unsigned sys_comp_id)
     return false;
 }
 
-bool Endpoint::accept_msg(int target_sysid, int target_compid, uint8_t src_sysid,
-                          uint8_t src_compid)
+bool Endpoint::accept_msg(const struct buffer *pbuf)
 {
     if (Log::get_max_level() >= Log::Level::DEBUG) {
-        log_debug("Endpoint [%d] got message to %d/%d from %u/%u", fd, target_sysid, target_compid,
-                  src_sysid, src_compid);
+        log_debug("Endpoint [%d] got message to %d/%d from %u/%u", fd,
+                  pbuf->target_sysid, pbuf->target_compid,
+                  pbuf->src_sysid, pbuf->src_compid);
         log_debug("\tKnown endpoints:");
         for (auto it = _sys_comp_ids.begin(); it != _sys_comp_ids.end(); it++) {
             log_debug("\t\t%u/%u", (*it >> 8), *it & 0xff);
@@ -322,19 +322,20 @@ bool Endpoint::accept_msg(int target_sysid, int target_compid, uint8_t src_sysid
 
     // This endpoint sent the message, we don't want to send it back over the
     // same channel to avoid loops: reject
-    if (has_sys_comp_id(src_sysid, src_compid))
+    if (has_sys_comp_id(pbuf->src_sysid, pbuf->src_compid))
         return false;
 
     // Message is broadcast on sysid: accept msg
-    if (target_sysid == 0 || target_sysid == -1)
+    if (pbuf->target_sysid == 0 || pbuf->target_sysid == -1)
         return true;
 
     // This endpoint has the target of message (sys and comp id): accept
-    if (target_compid > 0 && has_sys_comp_id(target_sysid, target_compid))
+    if (pbuf->target_compid > 0 &&
+        has_sys_comp_id(pbuf->target_sysid, pbuf->target_compid))
         return true;
 
     // This endpoint has the target of message (sysid, but compid is broadcast): accept
-    if (has_sys_id(target_sysid))
+    if (has_sys_id(pbuf->target_sysid))
         return true;
 
     // Reject everything else

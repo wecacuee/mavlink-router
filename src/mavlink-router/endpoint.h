@@ -96,7 +96,7 @@ public:
         return has_sys_comp_id(sys_comp_id);
     }
 
-    bool accept_msg(int target_sysid, int target_compid, uint8_t src_sysid, uint8_t src_compid);
+    bool accept_msg(const struct buffer *pbuf);
 
     struct buffer rx_buf;
     struct buffer tx_buf;
