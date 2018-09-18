@@ -72,9 +72,7 @@ int Endpoint::handle_read()
     struct buffer buf{};
 
     while ((r = read_msg(&buf)) > 0)
-        Mainloop::get_instance().route_msg(&buf, buf.target_sysid,
-                                           buf.target_compid, buf.src_sysid,
-                                           buf.src_compid);
+        Mainloop::get_instance().route_msg(&buf);
 
     return r;
 }
