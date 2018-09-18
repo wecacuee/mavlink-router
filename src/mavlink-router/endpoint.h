@@ -105,7 +105,7 @@ protected:
     virtual int read_msg(struct buffer *pbuf);
     virtual ssize_t _read_msg(uint8_t *buf, size_t len) = 0;
     bool _check_crc(const mavlink_msg_entry_t *msg_entry);
-    void _add_sys_comp_id(uint16_t sys_comp_id);
+    void _add_sys_comp_id(uint8_t sysid, uint8_t comp_id);
 
     const char *_name;
     size_t _last_packet_len = 0;

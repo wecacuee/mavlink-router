@@ -228,7 +228,7 @@ int Endpoint::read_msg(struct buffer *pbuf)
     _stat.read.handled_bytes += expected_size;
 
     if (!_crc_check_enabled || msg_entry) {
-        _add_sys_comp_id(((uint16_t)pbuf->src_sysid << 8) | pbuf->src_compid);
+        _add_sys_comp_id(pbuf->src_sysid, pbuf->src_compid);
     }
 
     pbuf->target_sysid = -1;
@@ -278,8 +278,10 @@ int Endpoint::read_msg(struct buffer *pbuf)
     return msg_entry != nullptr ? ReadOk : ReadUnkownMsg;
 }
 
-void Endpoint::_add_sys_comp_id(uint16_t sys_comp_id)
+void Endpoint::_add_sys_comp_id(uint8_t sysid, uint8_t compid)
 {
+    uint16_t sys_comp_id = sysid << 8 | compid;
+
     if (has_sys_comp_id(sys_comp_id))
         return;
 

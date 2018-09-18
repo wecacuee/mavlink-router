@@ -42,7 +42,7 @@ public:
         , _mode(mode)
     {
         assert(_logs_dir);
-        _add_sys_comp_id(LOG_ENDPOINT_SYSTEM_ID << 8);
+        _add_sys_comp_id(LOG_ENDPOINT_SYSTEM_ID, 0);
     }
 
     virtual bool start();
