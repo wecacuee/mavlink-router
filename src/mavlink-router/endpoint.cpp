@@ -68,19 +68,18 @@ bool Endpoint::handle_canwrite()
 
 int Endpoint::handle_read()
 {
-    int target_sysid, target_compid, r;
-    uint8_t src_sysid, src_compid;
+    int r;
     struct buffer buf{};
 
-    while ((r = read_msg(&buf, &target_sysid, &target_compid, &src_sysid, &src_compid)) > 0)
-        Mainloop::get_instance().route_msg(&buf, target_sysid, target_compid, src_sysid,
-                                           src_compid);
+    while ((r = read_msg(&buf)) > 0)
+        Mainloop::get_instance().route_msg(&buf, buf.target_sysid,
+                                           buf.target_compid, buf.src_sysid,
+                                           buf.src_compid);
 
     return r;
 }
 
-int Endpoint::read_msg(struct buffer *pbuf, int *target_sysid, int *target_compid,
-                       uint8_t *src_sysid, uint8_t *src_compid)
+int Endpoint::read_msg(struct buffer *pbuf)
 {
     bool should_read_more = true;
     uint32_t msg_id;
@@ -174,8 +173,8 @@ int Endpoint::read_msg(struct buffer *pbuf, int *target_sysid, int *target_compi
         msg_id = hdr->msgid;
         pbuf->payload = payload = rx_buf.data + sizeof(*hdr);
         seq = hdr->seq;
-        pbuf->src_sysid = *src_sysid = hdr->sysid;
-        pbuf->src_compid = *src_compid = hdr->compid;
+        pbuf->src_sysid = hdr->sysid;
+        pbuf->src_compid = hdr->compid;
         pbuf->payload_len = payload_len = hdr->payload_len;
 
         expected_size = sizeof(*hdr);
@@ -193,8 +192,8 @@ int Endpoint::read_msg(struct buffer *pbuf, int *target_sysid, int *target_compi
         msg_id = hdr->msgid;
         pbuf->payload = payload = rx_buf.data + sizeof(*hdr);
         seq = hdr->seq;
-        pbuf->src_sysid = *src_sysid = hdr->sysid;
-        pbuf->src_compid = *src_compid = hdr->compid;
+        pbuf->src_sysid = hdr->sysid;
+        pbuf->src_compid = hdr->compid;
         pbuf->payload_len = payload_len = hdr->payload_len;
 
         expected_size = sizeof(*hdr);
@@ -234,8 +233,8 @@ int Endpoint::read_msg(struct buffer *pbuf, int *target_sysid, int *target_compi
         _add_sys_comp_id(((uint16_t)pbuf->src_sysid << 8) | pbuf->src_compid);
     }
 
-    pbuf->target_sysid = *target_sysid = -1;
-    pbuf->target_compid = *target_compid = -1;
+    pbuf->target_sysid = -1;
+    pbuf->target_compid = -1;
 
     if (msg_entry == nullptr) {
         log_debug("No message entry for %u", msg_id);
@@ -243,17 +242,17 @@ int Endpoint::read_msg(struct buffer *pbuf, int *target_sysid, int *target_compi
         if (msg_entry->flags & MAV_MSG_ENTRY_FLAG_HAVE_TARGET_SYSTEM) {
             // if target_system is 0, it may have been trimmed out on mavlink2
             if (msg_entry->target_system_ofs < payload_len) {
-                pbuf->target_sysid = *target_sysid = payload[msg_entry->target_system_ofs];
+                pbuf->target_sysid = payload[msg_entry->target_system_ofs];
             } else {
-                pbuf->target_sysid = *target_sysid = 0;
+                pbuf->target_sysid = 0;
             }
         }
         if (msg_entry->flags & MAV_MSG_ENTRY_FLAG_HAVE_TARGET_COMPONENT) {
             // if target_system is 0, it may have been trimmed out on mavlink2
             if (msg_entry->target_component_ofs < payload_len) {
-                pbuf->target_compid = *target_compid = payload[msg_entry->target_component_ofs];
+                pbuf->target_compid = payload[msg_entry->target_component_ofs];
             } else {
-                pbuf->target_compid = *target_compid = 0;
+                pbuf->target_compid = 0;
             }
         }
     }
@@ -571,10 +570,9 @@ bool UartEndpoint::_change_baud_cb(void *data)
     return true;
 }
 
-int UartEndpoint::read_msg(struct buffer *pbuf, int *target_sysid, int *target_compid,
-                           uint8_t *src_sysid, uint8_t *src_compid)
+int UartEndpoint::read_msg(struct buffer *pbuf)
 {
-    int ret = Endpoint::read_msg(pbuf, target_sysid, target_compid, src_sysid, src_compid);
+    int ret = Endpoint::read_msg(pbuf);
 
     if (_change_baud_timeout != nullptr && ret == ReadOk) {
         log_info("Baudrate %lu responded, keeping it", _baudrates[_current_baud_idx]);
