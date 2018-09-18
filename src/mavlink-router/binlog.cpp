@@ -74,28 +74,12 @@ void BinLog::_send_stop()
 int BinLog::write_msg(const struct buffer *buffer)
 {
     const bool mavlink2 = buffer->data[0] == MAVLINK_STX;
-    uint32_t msg_id;
-    uint8_t *payload;
-    uint16_t payload_len;
     uint8_t trimmed_zeros;
+    uint8_t payload_len;
     mavlink_remote_log_data_block_t *binlog_data;
 
-    if (mavlink2) {
-        struct mavlink_router_mavlink2_header *msg
-            = (struct mavlink_router_mavlink2_header *)buffer->data;
-        msg_id = msg->msgid;
-        payload = buffer->data + sizeof(struct mavlink_router_mavlink2_header);
-        payload_len = msg->payload_len;
-    } else {
-        struct mavlink_router_mavlink1_header *msg
-            = (struct mavlink_router_mavlink1_header *)buffer->data;
-        msg_id = msg->msgid;
-        payload = buffer->data + sizeof(struct mavlink_router_mavlink1_header);
-        payload_len = msg->payload_len;
-    }
-
     /* set the expected system id to the first autopilot that we get a heartbeat from */
-    if (_target_system_id == -1 && msg_id == MAVLINK_MSG_ID_HEARTBEAT
+    if (_target_system_id == -1 && buffer->msgid == MAVLINK_MSG_ID_HEARTBEAT
         && buffer->src_compid == MAV_COMP_ID_AUTOPILOT1) {
         _target_system_id = buffer->src_sysid;
     }
@@ -103,19 +87,17 @@ int BinLog::write_msg(const struct buffer *buffer)
     /* Check if we should start or stop logging */
     _handle_auto_start_stop(buffer);
 
-    /* Check if we are interested in this msg_id */
-    if (msg_id != MAVLINK_MSG_ID_REMOTE_LOG_DATA_BLOCK) {
+    /* Check if we are interested in this msgid */
+    if (buffer->msgid != MAVLINK_MSG_ID_REMOTE_LOG_DATA_BLOCK) {
         return buffer->len;
     }
 
-    const mavlink_msg_entry_t *msg_entry = mavlink_get_msg_entry(msg_id);
+    const mavlink_msg_entry_t *msg_entry = mavlink_get_msg_entry(buffer->msgid);
     if (!msg_entry) {
         return buffer->len;
     }
 
-    if (payload_len > msg_entry->msg_len) {
-        payload_len = msg_entry->msg_len;
-    }
+    payload_len = std::min(buffer->payload_len, msg_entry->msg_len);
 
     if (mavlink2) {
         trimmed_zeros = get_trimmed_zeros(msg_entry, buffer);
@@ -126,10 +108,10 @@ int BinLog::write_msg(const struct buffer *buffer)
     if (trimmed_zeros) {
         binlog_data
             = (mavlink_remote_log_data_block_t *)alloca(sizeof(mavlink_remote_log_data_block_t));
-        memcpy(binlog_data, payload, payload_len);
+        memcpy(binlog_data, buffer->payload, payload_len);
         memset(binlog_data + payload_len, 0, trimmed_zeros);
     } else {
-        binlog_data = (mavlink_remote_log_data_block_t *)payload;
+        binlog_data = (mavlink_remote_log_data_block_t *)buffer->payload;
     }
 
     if (_logging_start_timeout) {
