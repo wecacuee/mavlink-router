@@ -221,8 +221,7 @@ bool LogEndpoint::_start_alive_timeout()
     return !!_alive_check_timeout;
 }
 
-void LogEndpoint::_handle_auto_start_stop(uint32_t msg_id, uint8_t source_system_id,
-                                          uint8_t source_component_id, uint8_t *payload)
+void LogEndpoint::_handle_auto_start_stop(const struct buffer *buf)
 {
     if (_target_system_id == -1) {
         // wait until initialized
@@ -241,12 +240,12 @@ void LogEndpoint::_handle_auto_start_stop(uint32_t msg_id, uint8_t source_system
     if (_mode != LogMode::while_armed)
         return;
 
-    if (msg_id != MAVLINK_MSG_ID_HEARTBEAT
-        || source_system_id != _target_system_id
-        || source_component_id != MAV_COMP_ID_AUTOPILOT1)
+    if (buf->msgid != MAVLINK_MSG_ID_HEARTBEAT
+        || buf->src_sysid != _target_system_id
+        || buf->src_compid != MAV_COMP_ID_AUTOPILOT1)
         return;
 
-    const mavlink_heartbeat_t *heartbeat = (mavlink_heartbeat_t *)payload;
+    const mavlink_heartbeat_t *heartbeat = (mavlink_heartbeat_t *)buf->payload;
     const bool is_armed = heartbeat->system_status == MAV_STATE_ACTIVE;
 
     if (_file == -1 && is_armed) {

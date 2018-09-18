@@ -67,8 +67,7 @@ protected:
     virtual bool _start_timeout() = 0;
     virtual bool _alive_timeout();
 
-    void _handle_auto_start_stop(uint32_t msg_id, uint8_t source_system_id,
-            uint8_t source_component_id, uint8_t *payload);
+    void _handle_auto_start_stop(const struct buffer *buf);
 
 private:
     int _get_file(const char *extension);

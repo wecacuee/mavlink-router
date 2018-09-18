@@ -78,8 +78,6 @@ int BinLog::write_msg(const struct buffer *buffer)
     uint8_t *payload;
     uint16_t payload_len;
     uint8_t trimmed_zeros;
-    uint8_t source_system_id;
-    uint8_t source_component_id;
     mavlink_remote_log_data_block_t *binlog_data;
 
     if (mavlink2) {
@@ -88,26 +86,22 @@ int BinLog::write_msg(const struct buffer *buffer)
         msg_id = msg->msgid;
         payload = buffer->data + sizeof(struct mavlink_router_mavlink2_header);
         payload_len = msg->payload_len;
-        source_system_id = msg->sysid;
-        source_component_id = msg->compid;
     } else {
         struct mavlink_router_mavlink1_header *msg
             = (struct mavlink_router_mavlink1_header *)buffer->data;
         msg_id = msg->msgid;
         payload = buffer->data + sizeof(struct mavlink_router_mavlink1_header);
         payload_len = msg->payload_len;
-        source_system_id = msg->sysid;
-        source_component_id = msg->compid;
     }
 
     /* set the expected system id to the first autopilot that we get a heartbeat from */
     if (_target_system_id == -1 && msg_id == MAVLINK_MSG_ID_HEARTBEAT
-        && source_component_id == MAV_COMP_ID_AUTOPILOT1) {
-        _target_system_id = source_system_id;
+        && buffer->src_compid == MAV_COMP_ID_AUTOPILOT1) {
+        _target_system_id = buffer->src_sysid;
     }
 
     /* Check if we should start or stop logging */
-    _handle_auto_start_stop(msg_id, source_system_id, source_component_id, payload);
+    _handle_auto_start_stop(buffer);
 
     /* Check if we are interested in this msg_id */
     if (msg_id != MAVLINK_MSG_ID_REMOTE_LOG_DATA_BLOCK) {
