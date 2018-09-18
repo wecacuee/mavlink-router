@@ -172,11 +172,11 @@ int Endpoint::read_msg(struct buffer *pbuf, int *target_sysid, int *target_compi
             return 0;
 
         msg_id = hdr->msgid;
-        payload = rx_buf.data + sizeof(*hdr);
+        pbuf->payload = payload = rx_buf.data + sizeof(*hdr);
         seq = hdr->seq;
-        *src_sysid = hdr->sysid;
-        *src_compid = hdr->compid;
-        payload_len = hdr->payload_len;
+        pbuf->src_sysid = *src_sysid = hdr->sysid;
+        pbuf->src_compid = *src_compid = hdr->compid;
+        pbuf->payload_len = payload_len = hdr->payload_len;
 
         expected_size = sizeof(*hdr);
         expected_size += hdr->payload_len;
@@ -191,11 +191,11 @@ int Endpoint::read_msg(struct buffer *pbuf, int *target_sysid, int *target_compi
             return 0;
 
         msg_id = hdr->msgid;
-        payload = rx_buf.data + sizeof(*hdr);
+        pbuf->payload = payload = rx_buf.data + sizeof(*hdr);
         seq = hdr->seq;
-        *src_sysid = hdr->sysid;
-        *src_compid = hdr->compid;
-        payload_len = hdr->payload_len;
+        pbuf->src_sysid = *src_sysid = hdr->sysid;
+        pbuf->src_compid = *src_compid = hdr->compid;
+        pbuf->payload_len = payload_len = hdr->payload_len;
 
         expected_size = sizeof(*hdr);
         expected_size += hdr->payload_len;
@@ -231,11 +231,11 @@ int Endpoint::read_msg(struct buffer *pbuf, int *target_sysid, int *target_compi
     _stat.read.handled_bytes += expected_size;
 
     if (!_crc_check_enabled || msg_entry) {
-        _add_sys_comp_id(((uint16_t)*src_sysid << 8) | *src_compid);
+        _add_sys_comp_id(((uint16_t)pbuf->src_sysid << 8) | pbuf->src_compid);
     }
 
-    *target_sysid = -1;
-    *target_compid = -1;
+    pbuf->target_sysid = *target_sysid = -1;
+    pbuf->target_compid = *target_compid = -1;
 
     if (msg_entry == nullptr) {
         log_debug("No message entry for %u", msg_id);
@@ -243,17 +243,17 @@ int Endpoint::read_msg(struct buffer *pbuf, int *target_sysid, int *target_compi
         if (msg_entry->flags & MAV_MSG_ENTRY_FLAG_HAVE_TARGET_SYSTEM) {
             // if target_system is 0, it may have been trimmed out on mavlink2
             if (msg_entry->target_system_ofs < payload_len) {
-                *target_sysid = payload[msg_entry->target_system_ofs];
+                pbuf->target_sysid = *target_sysid = payload[msg_entry->target_system_ofs];
             } else {
-                *target_sysid = 0;
+                pbuf->target_sysid = *target_sysid = 0;
             }
         }
         if (msg_entry->flags & MAV_MSG_ENTRY_FLAG_HAVE_TARGET_COMPONENT) {
             // if target_system is 0, it may have been trimmed out on mavlink2
             if (msg_entry->target_component_ofs < payload_len) {
-                *target_compid = payload[msg_entry->target_component_ofs];
+                pbuf->target_compid = *target_compid = payload[msg_entry->target_component_ofs];
             } else {
-                *target_compid = 0;
+                pbuf->target_compid = *target_compid = 0;
             }
         }
     }
