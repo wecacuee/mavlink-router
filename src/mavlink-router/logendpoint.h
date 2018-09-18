@@ -48,6 +48,16 @@ public:
     virtual bool start();
     virtual void stop();
 
+    virtual bool accept_msg(const struct buffer *buffer) override
+    {
+        if (!Endpoint::accept_msg(buffer))
+            return false;
+
+        _handle_auto_start_stop(buffer);
+
+        return true;
+    }
+
 protected:
     const char *_logs_dir;
     int _target_system_id = -1;

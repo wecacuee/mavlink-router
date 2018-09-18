@@ -50,6 +50,12 @@ bool BinLog::start()
     return true;
 }
 
+bool BinLog::accept_msg(const struct buffer *buffer)
+{
+    return LogEndpoint::accept_msg(buffer)
+           && buffer->msgid == MAVLINK_MSG_ID_REMOTE_LOG_DATA_BLOCK;
+}
+
 void BinLog::stop()
 {
     if (_file == -1) {
@@ -77,20 +83,6 @@ int BinLog::write_msg(const struct buffer *buffer)
     uint8_t trimmed_zeros;
     uint8_t payload_len;
     mavlink_remote_log_data_block_t *binlog_data;
-
-    /* set the expected system id to the first autopilot that we get a heartbeat from */
-    if (_target_system_id == -1 && buffer->msgid == MAVLINK_MSG_ID_HEARTBEAT
-        && buffer->src_compid == MAV_COMP_ID_AUTOPILOT1) {
-        _target_system_id = buffer->src_sysid;
-    }
-
-    /* Check if we should start or stop logging */
-    _handle_auto_start_stop(buffer);
-
-    /* Check if we are interested in this msgid */
-    if (buffer->msgid != MAVLINK_MSG_ID_REMOTE_LOG_DATA_BLOCK) {
-        return buffer->len;
-    }
 
     const mavlink_msg_entry_t *msg_entry = mavlink_get_msg_entry(buffer->msgid);
     if (!msg_entry) {

@@ -223,6 +223,12 @@ bool LogEndpoint::_start_alive_timeout()
 
 void LogEndpoint::_handle_auto_start_stop(const struct buffer *buf)
 {
+    /* set the expected system id to the first autopilot that we get a heartbeat from */
+    if (_target_system_id == -1 && buf->msgid == MAVLINK_MSG_ID_HEARTBEAT
+        && buf->src_compid == MAV_COMP_ID_AUTOPILOT1) {
+        _target_system_id = buf->src_sysid;
+    }
+
     if (_target_system_id == -1) {
         // wait until initialized
         return;
