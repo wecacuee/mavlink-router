@@ -1,6 +1,7 @@
 [submodule "modules/mavlink"]
 	path = modules/mavlink
 	url = https://github.com/mavlink/mavlink.git
+    branch = master
 [submodule "modules/gtest"]
 	path = modules/gtest
 	url = https://github.com/google/googletest.git
