@@ -1,6 +1,6 @@
 [submodule "modules/mavlink"]
 	path = modules/mavlink
-	url = https://github.com/mavlink/mavlink.git
+	url = file:///home/vdhiman/wrk/intel-aero-drone/bare-git/mavlink.git
     branch = master
 [submodule "modules/gtest"]
 	path = modules/gtest
